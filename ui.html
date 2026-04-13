@@ -236,6 +236,104 @@
     transform: scale(0.96);
   }
 
+  /* ── Color Presets ── */
+  .color-section {
+    margin-bottom: 16px;
+  }
+
+  .color-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+  }
+
+  .color-btn {
+    height: 28px;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.12s, box-shadow 0.12s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: center;
+    padding: 0 4px;
+  }
+
+  .color-btn:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent-glow);
+  }
+
+  .color-btn.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+
+  .color-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .color-custom {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .hex-input-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0 8px;
+    height: 30px;
+    flex: 1;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .hex-input-wrap:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+
+  .hex-prefix {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  .hex-input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    outline: none;
+    text-transform: uppercase;
+  }
+
+  .hex-preview {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
   /* ── Action Buttons ── */
   .btn-row {
     display: flex;
@@ -389,6 +487,32 @@
   </div>
 </div>
 
+<!-- Section color -->
+<div class="color-section">
+  <div class="section-label" id="label-color">セクション背景色</div>
+  <div class="color-custom">
+    <span class="hex-preview" id="hex-preview" style="background:rgba(203,213,225,0.8)"></span>
+    <div class="hex-input-wrap">
+      <span class="hex-prefix">#</span>
+      <input class="hex-input" id="hex-input" type="text" value="CBD5E1" maxlength="6" placeholder="CBD5E1" />
+    </div>
+  </div>
+  <div class="color-grid" style="margin-top:8px;">
+    <button class="color-btn active" data-opacity="0.8">
+      <span class="color-swatch" style="background:rgba(203,213,225,0.8)"></span>80%
+    </button>
+    <button class="color-btn" data-opacity="0.5">
+      <span class="color-swatch" style="background:rgba(203,213,225,0.5)"></span>50%
+    </button>
+    <button class="color-btn" data-opacity="0.3">
+      <span class="color-swatch" style="background:rgba(203,213,225,0.3)"></span>30%
+    </button>
+    <button class="color-btn" data-opacity="0.1">
+      <span class="color-swatch" style="background:rgba(203,213,225,0.1)"></span>10%
+    </button>
+  </div>
+</div>
+
 <!-- Action buttons -->
 <div class="btn-row">
   <button class="resize-btn" id="resize-btn" disabled>
@@ -420,6 +544,7 @@
     linkTitle:     isJa ? '上下左右を連動' : 'Link all sides',
     resize:        isJa ? 'リサイズ' : 'Resize',
     createSection: isJa ? 'セクション作成' : 'Create Section',
+    color:         isJa ? 'セクション背景色' : 'SECTION COLOR',
   };
   document.getElementById('header-desc').textContent = t.desc;
   document.getElementById('label-presets').textContent = t.presets;
@@ -431,6 +556,7 @@
   document.getElementById('link-btn').title = t.linkTitle;
   document.getElementById('btn-resize-label').textContent = t.resize;
   document.getElementById('btn-create-label').textContent = t.createSection;
+  document.getElementById('label-color').textContent = t.color;
   document.documentElement.lang = isJa ? 'ja' : 'en';
 
   // Send locale to plugin backend
@@ -492,6 +618,47 @@
     });
   });
 
+  // ── Color selection ──
+  const hexInput = document.getElementById('hex-input');
+  const hexPreview = document.getElementById('hex-preview');
+
+  function parseHex(hex) {
+    hex = hex.replace(/[^0-9a-fA-F]/g, '');
+    if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+    if (hex.length !== 6) return null;
+    return {
+      r: parseInt(hex.substring(0, 2), 16) / 255,
+      g: parseInt(hex.substring(2, 4), 16) / 255,
+      b: parseInt(hex.substring(4, 6), 16) / 255,
+    };
+  }
+
+  function getSelectedColor() {
+    const activeBtn = document.querySelector('.color-btn.active');
+    const opacity = activeBtn ? parseFloat(activeBtn.dataset.opacity) : 0.8;
+    const hex = parseHex(hexInput.value);
+    const c = hex || { r: 203/255, g: 213/255, b: 225/255 };
+    return { r: c.r, g: c.g, b: c.b, a: opacity };
+  }
+
+  function updatePreview() {
+    const c = getSelectedColor();
+    const r8 = Math.round(c.r * 255);
+    const g8 = Math.round(c.g * 255);
+    const b8 = Math.round(c.b * 255);
+    hexPreview.style.background = `rgba(${r8},${g8},${b8},${c.a})`;
+  }
+
+  hexInput.addEventListener('input', updatePreview);
+
+  document.querySelectorAll('.color-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      updatePreview();
+    });
+  });
+
   // ── Helper ──
   const getPadding = () => {
     const getValue = (el) => {
@@ -519,18 +686,18 @@
         Object.values(inputs).forEach(el => el.classList.add('linked'));
       }
       const type = hasSection ? 'resize' : 'create-section';
-      parent.postMessage({ pluginMessage: { type, ...getPadding() } }, '*');
+      parent.postMessage({ pluginMessage: { type, ...getPadding(), fillColor: getSelectedColor() } }, '*');
     });
   });
 
   // ── Resize button ──
   resizeBtn.addEventListener('click', () => {
-    parent.postMessage({ pluginMessage: { type: 'resize', ...getPadding() } }, '*');
+    parent.postMessage({ pluginMessage: { type: 'resize', ...getPadding(), fillColor: getSelectedColor() } }, '*');
   });
 
   // ── Create Section button ──
   createBtn.addEventListener('click', () => {
-    parent.postMessage({ pluginMessage: { type: 'create-section', ...getPadding() } }, '*');
+    parent.postMessage({ pluginMessage: { type: 'create-section', ...getPadding(), fillColor: getSelectedColor() } }, '*');
   });
 
 </script>

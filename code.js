@@ -3,7 +3,7 @@
 
 figma.showUI(__html__, {
   width: 300,
-  height: 440,
+  height: 560,
   title: "Section Resizer",
 });
 
@@ -18,6 +18,7 @@ function notifySelection() {
 
 figma.on("selectionchange", notifySelection);
 notifySelection();
+
 
 figma.ui.onmessage = (msg) => {
   if (msg.type === "set-locale") {
@@ -89,7 +90,7 @@ figma.ui.onmessage = (msg) => {
   }
 
   if (msg.type === "create-section") {
-    const { top, right, bottom, left } = msg;
+    const { top, right, bottom, left, fillColor } = msg;
     const selection = figma.currentPage.selection.filter(n => n.type !== "CONNECTOR");
 
     if (selection.length === 0) {
@@ -129,7 +130,8 @@ figma.ui.onmessage = (msg) => {
     // Create the new section
     const newSection = figma.createSection();
     newSection.name = "Section";
-    newSection.fills = [{ type: "SOLID", color: { r: 203/255, g: 213/255, b: 225/255 }, opacity: 0.8 }];
+    const fc = fillColor || { r: 203/255, g: 213/255, b: 225/255, a: 0.8 };
+    newSection.fills = [{ type: "SOLID", color: { r: fc.r, g: fc.g, b: fc.b }, opacity: fc.a }];
     newSection.resizeWithoutConstraints(
       (maxX - minX) + left + right,
       (maxY - minY) + top  + bottom
